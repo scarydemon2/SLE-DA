@@ -491,7 +491,7 @@ def evalAndShow(args, event_model, processor):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--filepath", default=r"./data", type=str)
-    parser.add_argument("--do_train", default=True, action='store_true')
+    parser.add_argument("--do_train", default=False, action='store_true')
     parser.add_argument('--do_eval', default=True, action='store_true')
     parser.add_argument("--do_predict", default=True, action='store_true')
     parser.add_argument("--attention", default=True, action='store_true')
@@ -516,8 +516,11 @@ if __name__ == "__main__":
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     processor = ACE05_dataset(args.filepath, tokenizer, args.max_length)
     model = Event_Model(args).to(args.device)
-    # model.module.load_state_dict(torch.load(os.path.join(args.filepath, r"argument模型.pkl")))
-    # torch.save(model.state_dict(), os.path.join(args.filepath, "0.764state.pkl"))
-    # evalAndShow(args, model, processor)
-    # eval(args, model, processor)
-    train(args, model, processor)
+    if args.do_train:
+        train(args, model, processor)
+        torch.save(model.state_dict(), os.path.join(args.filepath, "模型.pkl"))
+    if args.do_eval:
+        model.load_state_dict(torch.load(os.path.join(args.filepath, r"模型.pkl")))
+        eval(args, model, processor)
+
+
