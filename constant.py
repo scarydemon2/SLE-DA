@@ -1,0 +1,215 @@
+import numpy as np
+
+event_type = ['O', 'Be-Born', 'Marry', 'Divorce', 'Injure', 'Die', 'Transport', 'Transfer-Ownership', 'Transfer-Money',
+              'Start-Org', 'Merge-Org', 'Declare-Bankruptcy', 'End-Org', 'Attack', 'Demonstrate', 'Meet', 'Phone-Write',
+              'Start-Position', 'End-Position', 'Nominate', 'Elect', 'Arrest-Jail', 'Release-Parole', 'Trial-Hearing',
+              'Charge-Indict', 'Sue', 'Convict', 'Sentence', 'Fine', 'Execute', 'Extradite', 'Acquit', 'Appeal',
+              'Pardon']  # 顺序不可变
+
+eventType2id = {e: i for i, e in enumerate(event_type)}
+id2eventType = {i: e for i, e in enumerate(event_type)}
+
+coarse_grain_entity_BIO_tags = ['O', 'ORG', 'PER', 'TIM', 'GPE', 'VEH', 'LOC', 'Job-Title', 'Numeric', 'FAC', 'WEA',
+                                'Contact-Info', 'Sentence', 'Crime', ]
+entityType2id = {tag: id for id, tag in enumerate(coarse_grain_entity_BIO_tags)}
+id2entityType = {id: tag for id, tag in enumerate(coarse_grain_entity_BIO_tags)}
+
+all_arguments = ['O', 'Person', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                 'Time-Ending', 'Time-After', 'Time-Before', 'Time-Holds', 'Place', 'Agent', 'Victim',
+                 'Instrument', 'Artifact', 'Vehicle', 'Price', 'Origin', 'Destination',
+                 'Buyer', 'Seller', 'Beneficiary', 'Recipient', 'Giver', 'Money', 'Org',
+                 'Attacker', 'Target', 'Entity', 'Position', 'Crime', 'Defendant',
+                 'Prosecutor', 'Adjudicator', 'Plaintiff', 'Sentence'
+                 ]
+
+argument2id = {arg: i for i, arg in enumerate(all_arguments)}
+id2argument = {i: arg for i, arg in enumerate(all_arguments)}
+all_slots = ["O", "Person-Arg", 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+             'Time-Ending', 'Time-After', 'Time-Before', 'Time-Holds', "Place-Arg", "Agent-Arg", "Victim-Arg",
+             "Instrument-Arg", "Artifact-Arg",
+             "Vehicle-Arg", "Price-Arg", "Origin-Arg", "Destination-Arg", "Buyer-Arg", "Seller-Arg", "Beneficiary-Arg",
+             "Recipient-Arg", "Giver-Arg", "Money-Arg", "Org-Arg", "Attacker-Arg", "Target-Arg", "Entity-Arg",
+             "Position-Arg", "Crime-Arg", "Defendant-Arg", "Prosecutor-Arg", "Adjudicator-Arg", "Plaintiff-Arg",
+             "Sentence-Arg"
+             ]
+slot2id = {s: i for i, s in enumerate(all_slots)}
+event_slot_mask = np.zeros((len(event_type), len(all_slots)))
+# event_slot_mask_map = {"O": [],
+#                        "Be-Born": ["Person-Arg", 'Time-At-Beginning', "Place-Arg"],
+#                        "Marry": ["Person-Arg", 'Place-Arg'],
+#                        "Divorce": ["Person-Arg", "Place-Arg"],
+#                        "Injure": ["Agent-Arg", "Victim-Arg", 'Instrument-Arg', 'Place-Arg'],
+#                        "Die": ["Agent-Arg", "Victim-Arg", 'Instrument-Arg', 'Place-Arg'],
+#                        "Transport": ["Agent-Arg", 'Artifact-Arg', 'Vehicle-Arg', 'Price-Arg', 'Origin-Arg',
+#                                      'Destination-Arg'],
+#                        "Transfer-Ownership": ["Buyer-Arg", 'Seller-Arg', 'Beneficiary-Arg', 'Artifact-Arg', "Price-Arg",
+#                                               'Place-Arg'],
+#                        "Transfer-Money": ["Giver-Arg", 'Recipient-Arg', "Beneficiary-Arg", 'Money-Arg',"Place-Arg"],
+#                        "Start-Org": ['Agent-Arg', 'Org-Arg', 'Place-Arg'],
+#                        "Merge-Org": ['Org-Arg','Place-Arg'],
+#                        "Declare-Bankruptcy": ['Org-Arg', 'Place-Arg'],
+#                        'End-Org': ['Org-Arg','Place-Arg'],
+#                        "Attack": ["Attacker-Arg", 'Target-Arg', 'Instrument-Arg','Place-Arg'],
+#                        'Demonstrate': ['Entity-Arg', 'Place-Arg'],
+#                        "Meet": ['Entity-Arg',  'Place-Arg'],
+#                        "Phone-Write": ['Entity-Arg'],
+#                        "Start-Position": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Place-Arg'],
+#                        "End_Position": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Place-Arg'],
+#                        "Nominate": ["Person-Arg", 'Agent-Arg', "Position-Arg",  'Place-Arg'],
+#                        "Elect": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Place-Arg'],
+#                        "Arrest-Jail": ["Person-Arg", 'Agent-Arg', 'Crime-Arg', 'Place-Arg'],
+#                        "Release-Parole": ["Person-Arg", 'Entity-Arg', 'Crime-Arg', 'Place-Arg'],
+#                        "Trial-Hearing": ["Defendant-Arg", 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+#                                          'Place-Arg'],
+#                        "Charge-Indict": ["Defendant-Arg", 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+#                                          'Time-At-Beginning','Place-Arg'],
+#                        "Sue": ['Plaintiff-Arg', 'Defendant-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+#                                'Place-Arg'],
+#                        "Convict": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg',  'Place-Arg'],
+#                        "Sentence": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', "Sentence-Arg",
+#                                     'Place-Arg'],
+#                        "Fine": ["Entity-Arg", 'Adjudicator-Arg', 'Money-Arg', "Crime-Arg", 'Place-Arg'],
+#                        "Execute": ["Person-Arg", 'Agent-Arg', 'Crime-Arg', 'Place-Arg'],
+#                        "Extradite": ["Agent-Arg", 'Person-Arg', 'Destination-Arg', 'Origin-Arg', 'Crime-Arg',],
+#                        "Acquit": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', 'Place-Arg'],
+#                        "Pardon": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', 'Place-Arg'],
+#                        "Appeal": ['Defendant-Arg', 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+#                                   'Place-Arg']
+#                        }
+event_slot_mask_map = {"O": [],
+                       "Be-Born": ["Person-Arg", 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                   'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', "Place-Arg"],
+                       "Marry": ["Person-Arg", 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                 'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Divorce": ["Person-Arg", 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                   'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', "Place-Arg"],
+                       "Injure": ["Agent-Arg", "Victim-Arg", 'Instrument-Arg', 'Time-At-Beginning', 'Time-Within',
+                                  'Time-At-End', 'Time-Starting',
+                                  'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Die": ["Agent-Arg", "Victim-Arg", 'Instrument-Arg', 'Time-At-Beginning', 'Time-Within',
+                               'Time-At-End', 'Time-Starting',
+                               'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Transport": ["Agent-Arg", 'Artifact-Arg', 'Vehicle-Arg', 'Price-Arg', 'Origin-Arg',
+                                     'Destination-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End',
+                                     'Time-Starting',
+                                     'Time-Ending', 'Time-After', 'Time-Before','Time-Holds'],
+                       "Transfer-Ownership": ["Buyer-Arg", 'Seller-Arg', 'Beneficiary-Arg', 'Artifact-Arg', "Price-Arg",
+                                              'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                              'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Transfer-Money": ["Giver-Arg", 'Recipient-Arg', "Beneficiary-Arg", 'Money-Arg',
+                                          'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                          'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                                          "Place-Arg"],
+                       "Start-Org": ['Agent-Arg', 'Org-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End',
+                                     'Time-Starting',
+                                     'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Merge-Org": ['Org-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                     'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Declare-Bankruptcy": ['Org-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End',
+                                              'Time-Starting',
+                                              'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       'End-Org': ['Org-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                   'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Attack": ["Attacker-Arg", 'Target-Arg', 'Instrument-Arg', 'Time-At-Beginning', 'Time-Within',
+                                  'Time-At-End', 'Time-Starting',
+                                  'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       'Demonstrate': ['Entity-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                       'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Meet": ['Entity-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Phone-Write": ['Entity-Arg', 'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                       'Time-Ending', 'Time-After', 'Time-Before','Time-Holds'],
+                       "Start-Position": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Time-At-Beginning',
+                                          'Time-Within', 'Time-At-End', 'Time-Starting',
+                                          'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "End_Position": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Time-At-Beginning', 'Time-Within',
+                                        'Time-At-End', 'Time-Starting',
+                                        'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Nominate": ["Person-Arg", 'Agent-Arg', "Position-Arg", 'Time-At-Beginning', 'Time-Within',
+                                    'Time-At-End', 'Time-Starting',
+                                    'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Elect": ["Person-Arg", 'Entity-Arg', "Position-Arg", 'Time-At-Beginning', 'Time-Within',
+                                 'Time-At-End', 'Time-Starting',
+                                 'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Arrest-Jail": ["Person-Arg", 'Agent-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                       'Time-At-End', 'Time-Starting',
+                                       'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Release-Parole": ["Person-Arg", 'Entity-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                          'Time-At-End', 'Time-Starting',
+                                          'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Trial-Hearing": ["Defendant-Arg", 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+                                         'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                         'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                                         'Place-Arg'],
+                       "Charge-Indict": ["Defendant-Arg", 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+                                         'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                         'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                                         'Place-Arg'],
+                       "Sue": ['Plaintiff-Arg', 'Defendant-Arg', 'Adjudicator-Arg', 'Crime-Arg', 'Time-At-Beginning',
+                               'Time-Within', 'Time-At-End', 'Time-Starting',
+                               'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                               'Place-Arg'],
+                       "Convict": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                   'Time-At-End', 'Time-Starting',
+                                   'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Sentence": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', "Sentence-Arg",
+                                    'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                    'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                                    'Place-Arg'],
+                       "Fine": ["Entity-Arg", 'Adjudicator-Arg', 'Money-Arg', "Crime-Arg", 'Time-At-Beginning',
+                                'Time-Within', 'Time-At-End', 'Time-Starting',
+                                'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Execute": ["Person-Arg", 'Agent-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                   'Time-At-End', 'Time-Starting',
+                                   'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Extradite": ["Agent-Arg", 'Person-Arg', 'Destination-Arg', 'Origin-Arg', 'Crime-Arg',
+                                     'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                     'Time-Ending', 'Time-After','Time-Before', 'Time-Holds'],
+                       "Acquit": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                  'Time-At-End', 'Time-Starting',
+                                  'Time-Ending', 'Time-After', 'Time-Before','Time-Holds', 'Place-Arg'],
+                       "Pardon": ["Defendant-Arg", 'Adjudicator-Arg', 'Crime-Arg', 'Time-At-Beginning', 'Time-Within',
+                                  'Time-At-End', 'Time-Starting',
+                                  'Time-Ending', 'Time-After','Time-Before', 'Time-Holds', 'Place-Arg'],
+                       "Appeal": ['Defendant-Arg', 'Prosecutor-Arg', 'Adjudicator-Arg', 'Crime-Arg',
+                                  'Time-At-Beginning', 'Time-Within', 'Time-At-End', 'Time-Starting',
+                                  'Time-Ending', 'Time-After','Time-Before', 'Time-Holds',
+                                  'Place-Arg']
+                       }
+i = 0
+for k in event_slot_mask_map.keys():
+    slots = event_slot_mask_map[k]
+    for s in slots:
+        event_slot_mask[i][slot2id[s]] = 1
+    i += 1
+
+# argument2type = {'event': 'event', 'Vehicle': "what", 'Artifact': "who", 'Destination': "where", 'Agent': "who",
+#                  'Time-At-Beginning': "when", 'Time-Within': "when", 'Origin': "where", 'Time-At-End': "when",
+#                  'Time-Starting': "when", 'Time-Ending': "when", 'Time-After': "when", 'Time-Holds': "when",
+#                  'Victim': "who", 'Place': "where", 'Time-Before': "when", 'Person': "who", 'Position': "where",
+#                  'Entity': "what", 'Attacker': "who", 'Target': "who", 'Instrument': "what", 'Giver': "who",
+#                  'Recipient': "who", 'Money': "what", 'Beneficiary': "who", 'Plaintiff': "who", 'Defendant': "who",
+#                  'Crime': "what", 'Adjudicator': "who", 'Org': "what", 'Buyer': "who", 'Seller': "who", 'Price': "what",
+#                  'Prosecutor': "who", 'Sentence': "what"}
+# arg_type2id = {"O": 0, "B-who": 1, "B-when": 2, "B-what": 3, "B-where": 4, "B-event": 5, "I-who": 6, "I-when": 7,
+#                "I-what": 8, "I-where": 9, "I-event": 10, '[CLS]': 11, "[SEP]": 12}
+# id2arg_type = {0: "O", 1: "B-who", 2: "B-when", 3: "B-what", 4: "B-where", 5: "B-event", 6: "I-who", 7: "I-when",
+#                8: "I-what", 9: "I-where", 10: "I-event", 11: '[CLS]', 12: "[SEP]"}
+# argument2type={'Vehicle':"how", 'Artifact':"who", 'Destination':"where", 'Agent':"who", 'Time-At-Beginning':"when", 'Time-Within':"when",
+#                'Origin':"where", 'Time-At-End':"when", 'Time-Starting':"when", 'Time-Ending':"when", 'Time-After':"when", 'Time-Holds':"when",
+#                'Victim':"who", 'Place':"where", 'Time-Before':"when", 'Person':"who", 'Position':"what", 'Entity':"who", 'Attacker':"who",
+#                'Target':"who", 'Instrument':"how", 'Giver':"who", 'Recipient':"who", 'Money':"what", 'Beneficiary':"who", 'Plaintiff':"who",
+#                'Defendant':"who", 'Crime':"what", 'Adjudicator':"who", 'Org':"who", 'Buyer':"who", 'Seller':"who", 'Price':"what",
+#                'Prosecutor':"who", 'Sentence':"what"}
+# arg_type2id={"O":0,"B-who":1,"B-when":2,"B-what":3,"B-where":4,"I-who":5,"I-when":6,"I-what":7,"I-where":8,'B-how':9,"I-how":10,'[CLS]':11,"[SEP]":12}
+# id2arg_type={0:"O",1:"B-who",2:"B-when",3:"B-what",4:"B-where",5:"I-who",6:"I-when",7:"I-what",8:"I-where",9:'B-how',10:"I-how",11:'[CLS]',12:"[SEP]"}
+
+
+pos2type = {'Null': 'Null', 'NNP': 'N', 'IN': 'Null', 'VBG': 'V', ':': 'Null', 'VBZ': 'V', 'NNPS': 'N', '.': 'Null',
+            'RB': 'Adv', ',': 'Null', 'PRP': 'N', 'MD': 'Null', 'VB': 'V', 'DT': 'Null', 'NN': 'N', 'NNS': 'N',
+            'VBN': 'V', 'RP': 'Null', 'PRP$': 'Null', 'VBD': 'V', 'JJ': 'Adj', 'CD': 'N', 'WRB': 'Null', 'TO': 'Null',
+            'WP': 'N', 'CC': 'Null', 'VBP': 'V', 'EX': 'Null', '-LRB-': 'Null', '-RRB-': 'Null', 'PDT': 'Adj',
+            'WDT': 'N', 'JJS': 'Adj', 'RBR': 'Adv', 'POS': 'Null', '$': 'Null', '``': 'Null', "''": 'Null',
+            'JJR': 'Adj', 'RBS': 'Adv', 'UH': 'Null', 'WP$': 'N', 'FW': 'N', 'LS': 'N', 'SYM': 'Null', '#': 'Null'}
+pos_tag2id = {'Null': 0, 'N': 1, 'V': 2, 'Adj': 3, 'Adv': 4}
+# pos_tag2id={'Null':0,'NNP':1, 'IN':2, 'VBG':3, ':':4, 'VBZ':5, 'NNPS':6, '.':7, 'RB':8, ',':9, 'PRP':10, 'MD':11, 'VB':12, 'DT':13, 'NN':14, 'NNS':15, 'VBN':16, 'RP':17, 'PRP$':18, 'VBD':19, 'JJ':20, 'CD':21, 'WRB':22, 'TO':23, 'WP':24, 'CC':25, 'VBP':26, 'EX':27, '-LRB-':28, '-RRB-':29, 'PDT':30, 'WDT':31, 'JJS':32, 'RBR':33, 'POS':34, '$':35, '``':36, "''":37, 'JJR':38, 'RBS':39, 'UH':40, 'WP$':41, 'FW':42, 'LS':43, 'SYM':44, '#':45}
