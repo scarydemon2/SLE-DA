@@ -11,3 +11,14 @@ to eval the model
 ```
 python run_args.py --do_eval
 ```
+| models  | Event Detection F1 | Argument Extraction F1 |
+| ------- | ------------------ | ---------------------- |
+| DMCNN   | 69.1               | 53.5                   |
+| PLMEE   | 80.7               | 58.0                   |
+| JRNN    | 69.3               | 55.4                   |
+| JMEE    | 73.7               | 60.3                   |
+| BERT-QA | 72.4               | 53.5                   |
+| MQAEE   | 73.8               | 55.0                   |
+| TBNNAM  | 69.9               | -                      |
+| ------- | ------------------ | ---------------------- |
+| **SLE-DA**  | 77.4               | 58.7                   |
