@@ -1,6 +1,7 @@
 # SLE-DA
 
 the code of 《CAN WE GET MORE FROM LABELS? EVENT EXTRACTION WITHOUT TRIGGERS》IEEE ICASSP 2022
+![image](https://user-images.githubusercontent.com/33051998/148490563-6a1300d1-8203-44a8-8805-890e20e68dd2.png)
 
 First of all you need to have the original data of ACE2005. Then refer to https://github.com/nlpcl-lab/ace2005-preprocessing for preprocessing. Then put the output file into SLE-DA/data
 to train the model 
