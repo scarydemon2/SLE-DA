@@ -11,6 +11,8 @@ to eval the model
 ```
 python run_args.py --do_eval
 ```
+results are shown at below table,ours(SLE-DA)
+
 | models  | Event Detection F1 | Argument Extraction F1 |
 | ------- | ------------------ | ---------------------- |
 | DMCNN   | 69.1               | 53.5                   |
@@ -20,5 +22,4 @@ python run_args.py --do_eval
 | BERT-QA | 72.4               | 53.5                   |
 | MQAEE   | 73.8               | 55.0                   |
 | TBNNAM  | 69.9               | -                      |
-| ------- | ------------------ | ---------------------- |
 | **SLE-DA**  | 77.4               | 58.7                   |
